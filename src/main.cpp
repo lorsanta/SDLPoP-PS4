@@ -20,9 +20,21 @@ The authors of this program may be contacted at https://forum.princed.org
 
 #include "common.h"
 
+#include <sstream>
+
+#ifdef PS4
+
+#include <orbis/libkernel.h>
+#include <orbis/Sysmodule.h>
+
+// Logging
+std::stringstream debugLogStream;
+
+# endif
+
 int main(int argc, char *argv[])
 {
-	g_argc = argc;
+	g_argc = 1;
 	g_argv = argv;
 	pop_main();
 	return 0;

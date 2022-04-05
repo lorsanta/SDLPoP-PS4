@@ -35,14 +35,14 @@ The authors of this program may be contacted at https://forum.princed.org
 
 // Enable or disable the SDL hardware accelerated renderer backend
 // Uses a software backend otherwise
-#define USE_HW_ACCELERATION
+// #define USE_HW_ACCELERATION
 
 // Enable or disable fading.
 // Fading used to be very buggy, but now it works correctly.
 #define USE_FADE
 
 // Enable or disable the potions level. (copy protection)
-#define USE_COPYPROT
+//#define USE_COPYPROT
 
 // Enable or disable flashing.
 #define USE_FLASH
@@ -307,11 +307,11 @@ The authors of this program may be contacted at https://forum.princed.org
 #define USE_LIGHTING
 
 // Enable screenshot features.
-#define USE_SCREENSHOT
+//#define USE_SCREENSHOT
 
 // Automatically switch to keyboard or joystick/gamepad mode if there is input from that device.
 // Useful if SDL detected a gamepad but there is none.
-#define USE_AUTO_INPUT_MODE
+//#define USE_AUTO_INPUT_MODE
 
 #ifdef USE_TEXT // The menu won't work without text.
 
@@ -324,7 +324,7 @@ The authors of this program may be contacted at https://forum.princed.org
 #define USE_COLORED_TORCHES
 
 // Enable fast forwarding with the backtick key.
-#define USE_FAST_FORWARD
+//#define USE_FAST_FORWARD
 
 // Set how much should the fast forwarding speed up the game.
 #define FAST_FORWARD_RATIO 10
@@ -341,8 +341,16 @@ The authors of this program may be contacted at https://forum.princed.org
 
 
 // Default SDL_Joystick button values
-#define SDL_JOYSTICK_BUTTON_Y 2
-#define SDL_JOYSTICK_BUTTON_X 3
+#define PS4_SQUARE_BUTTON 2
+#define PS4_TRIANGLE_BUTTON 3
+#define PS4_X_BUTTON 0
+#define PS4_OPTIONS_BUTTON 9
+
+#define PS4_BUTTON_DPAD_UP 13
+#define PS4_BUTTON_DPAD_RIGHT 16
+#define PS4_BUTTON_DPAD_DOWN 14
+#define PS4_BUTTON_DPAD_LEFT 15
+
 #define SDL_JOYSTICK_X_AXIS 0
 #define SDL_JOYSTICK_Y_AXIS 1
 

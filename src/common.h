@@ -55,6 +55,15 @@ extern "C" {
 #include "proto.h"
 #include "data.h"
 
+#if defined(PS4) || defined(HOSTDEBUG)
+#include "ps4_debug.h"
+#endif
+
+#ifdef PS4
+#define PS4DATAPATH "/data/sdlpop/"
+#define ADD_PS4DATAPATH(str2) PS4DATAPATH str2
+#endif
+
 #ifndef MAX
 #define MAX(a,b) ((a)>(b)?(a):(b))
 #endif

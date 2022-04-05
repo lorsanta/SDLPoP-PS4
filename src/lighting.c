@@ -25,7 +25,13 @@ The authors of this program may be contacted at https://forum.princed.org
 image_type* screen_overlay = NULL;
 Uint32 bgcolor;
 
+#ifdef PS4
+const char mask_filename[] = "/app0/data/light.bmp";
+#elif HOSTDEBUG
+const char mask_filename[] = "data/light.bmp";
+#else
 const char mask_filename[] = "data/light.png";
+#endif
 const Uint8 ambient_level = 128;
 
 // Called once at startup.

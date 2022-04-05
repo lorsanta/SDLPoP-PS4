@@ -29,6 +29,12 @@ The authors of this program may be contacted at https://forum.princed.org
 #include "dirent.h"
 #endif
 
+#include <time.h>
+
+#include <sys/types.h>
+#include <sys/time.h>
+#include <sys/resource.h>
+
 // Most functions in this file are different from those in the original game.
 
 void sdlperror(const char* header) {
@@ -57,7 +63,12 @@ void find_exe_dir(void) {
 }
 
 bool file_exists(const char* filename) {
+	#if defined(PS4) || defined(HOSTDEBUG)
+	struct stat buf;
+	return (stat(filename, &buf) == 0);
+	#else
 	return (access(filename, F_OK) != -1);
+	#endif
 }
 
 const char* locate_file_(const char* filename, char* path_buffer, int buffer_size) {
@@ -289,6 +300,7 @@ int __pascal far key_test_quit() {
 
 // seg009:0E54
 const char* __pascal far check_param(const char *param) {
+	#if !defined(PS4) && !defined(HOSTDEBUG)
 	// stub
 	short arg_index;
 	for (arg_index = 1; arg_index < g_argc; ++arg_index) {
@@ -327,6 +339,7 @@ const char* __pascal far check_param(const char *param) {
 			return g_argv[arg_index];
 		}
 	}
+	#endif
 	return NULL;
 }
 
@@ -338,17 +351,26 @@ int __pascal far pop_wait(int timer_index,int time) {
 
 static FILE* open_dat_from_root_or_data_dir(const char* filename) {
 	FILE* fp = NULL;
+
+	#ifndef PS4
 	fp = fopen(filename, "rb");
+	#endif
 
 	// if failed, try if the DAT file can be opened in the data/ directory, instead of the main folder
 	if (fp == NULL) {
 		char data_path[POP_MAX_PATH];
+		#ifdef PS4
+		snprintf_check(data_path, sizeof(data_path), "/app0/data/%s", filename);
+		#else
 		snprintf_check(data_path, sizeof(data_path), "data/%s", filename);
+		#endif
 
+		#if !defined(PS4) && !defined(HOSTDEBUG)
 		if (!file_exists(data_path)) {
 			find_exe_dir();
 			snprintf_check(data_path, sizeof(data_path), "%s/data/%s", exe_dir, filename);
 		}
+		#endif
 
 		// verify that this is a regular file and not a directory (otherwise, don't open)
 		struct stat path_stat;
@@ -414,7 +436,11 @@ dat_type *__pascal open_dat(const char *filename, int optional) {
 			filename_no_ext[len-4] = '\0'; // terminate, so ".DAT" is deleted from the filename
 		}
 		char foldername[POP_MAX_PATH];
+		#ifdef PS4
+		snprintf_check(foldername,sizeof(foldername),"/app0/data/%s",filename_no_ext);
+		#else
 		snprintf_check(foldername,sizeof(foldername),"data/%s",filename_no_ext);
+		#endif
 		const char* data_path = locate_file(foldername);
 		struct stat path_stat;
 		int result = stat(data_path, &path_stat);
@@ -786,7 +812,7 @@ image_type* far __pascal far load_image(int resource_id, dat_pal_type* palette) 
 	// stub
 	data_location result;
 	int size;
-	void* image_data = load_from_opendats_alloc(resource_id, "png", &result, &size);
+	void* image_data = load_from_opendats_alloc(resource_id, "bmp", &result, &size);
 	image_type* image = NULL;
 	switch (result) {
 		case data_none:
@@ -2084,7 +2110,11 @@ const int sound_channel = 0;
 const int max_sound_id = 58;
 
 void load_sound_names() {
+	#ifdef PS4
+	const char* names_path = locate_file("/app0/data/music/names.txt");
+	#else
 	const char* names_path = locate_file("data/music/names.txt");
+	#endif
 	if (sound_names != NULL) return;
 	FILE* fp = fopen(names_path,"rt");
 	if (fp==NULL) return;
@@ -2130,11 +2160,19 @@ sound_buffer_type* load_sound(int index) {
 				char filename[POP_MAX_PATH];
 				if (!skip_mod_data_files) {
 					// before checking the root directory, first try mods/MODNAME/
+					#ifdef PS4
+					snprintf_check(filename, sizeof(filename), "/app0/%s/music/%s.ogg", mod_data_path, sound_name(index));
+					#else
 					snprintf_check(filename, sizeof(filename), "%s/music/%s.ogg", mod_data_path, sound_name(index));
+					#endif
 					fp = fopen(filename, "rb");
 				}
 				if (fp == NULL && !skip_normal_data_files) {
+					#ifdef PS4
+					snprintf_check(filename, sizeof(filename), "/app0/data/music/%s.ogg", sound_name(index));
+					#else
 					snprintf_check(filename, sizeof(filename), "data/music/%s.ogg", sound_name(index));
+					#endif
 					fp = fopen(locate_file(filename), "rb");
 				}
 				if (fp == NULL) {
@@ -2442,7 +2480,7 @@ void __pascal far set_gr_mode(byte grmode) {
 	SDL_SetHint(SDL_HINT_WINDOWS_DISABLE_THREAD_NAMING, "1");
 #endif
 	if (SDL_Init(SDL_INIT_VIDEO | SDL_INIT_TIMER | SDL_INIT_NOPARACHUTE |
-	             SDL_INIT_GAMECONTROLLER | SDL_INIT_HAPTIC ) != 0) {
+	             SDL_INIT_GAMECONTROLLER) != 0) {
 		sdlperror("set_gr_mode: SDL_Init");
 		quit(1);
 	}
@@ -2478,9 +2516,9 @@ void __pascal far set_gr_mode(byte grmode) {
 #endif
 	window_ = SDL_CreateWindow(WINDOW_TITLE,
 	                           SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED,
-	                           pop_window_width, pop_window_height, flags);
+	                           pop_window_width, pop_window_height, 0);
 	// Make absolutely sure that VSync will be off, to prevent timer issues.
-	SDL_SetHint(SDL_HINT_RENDER_VSYNC, "0");
+	// SDL_SetHint(SDL_HINT_RENDER_VSYNC, "0");
 #ifdef USE_HW_ACCELERATION
 	const Uint32 RENDER_BACKEND = SDL_RENDERER_ACCELERATED;
 #else
@@ -2501,15 +2539,19 @@ void __pascal far set_gr_mode(byte grmode) {
 #endif
 	}
 
+	#if !defined(PS4) && !defined(HOSTDEBUG)
 	SDL_Surface* icon = IMG_Load(locate_file("data/icon.png"));
 	if (icon == NULL) {
 		sdlperror("set_gr_mode: Could not load icon");
 	} else {
 		SDL_SetWindowIcon(window_, icon);
 	}
+	#endif
 
+	#if !defined(PS4) && !defined(HOSTDEBUG)
 	apply_aspect_ratio();
 	window_resized();
+	#endif
 
 	/* Migration to SDL2: everything is still blitted to onscreen_surface_, however:
 	 * SDL2 renders textures to the screen instead of surfaces; so, every screen
@@ -2524,9 +2566,11 @@ void __pascal far set_gr_mode(byte grmode) {
 	}
 	init_overlay();
 	init_scaling();
+	#ifndef PS4
 	if (start_fullscreen) {
 		SDL_ShowCursor(SDL_DISABLE);
 	}
+	# endif
 
 
 	//SDL_WM_SetCaption(WINDOW_TITLE, NULL);
@@ -2760,7 +2804,11 @@ void load_from_opendats_metadata(int resource_id, const char* extension, FILE** 
 			if (len >= 5 && filename_no_ext[len-4] == '.') {
 				filename_no_ext[len-4] = '\0'; // terminate, so ".DAT" is deleted from the filename
 			}
+			#ifdef PS4
+			snprintf_check(image_filename,sizeof(image_filename),"/app0/data/%s/res%d.%s",filename_no_ext, resource_id, extension);
+			#else
 			snprintf_check(image_filename,sizeof(image_filename),"data/%s/res%d.%s",filename_no_ext, resource_id, extension);
+			#endif
 			if (!use_custom_levelset) {
 				//printf("loading (binary) %s",image_filename);
 				fp = fopen(locate_file(image_filename), "rb");
@@ -3505,12 +3553,43 @@ void process_events() {
 				}
 #endif
 				if (event.type == SDL_JOYBUTTONDOWN) {
-					if      (event.jbutton.button == SDL_JOYSTICK_BUTTON_Y)   joy_AY_buttons_state = -1; // Y (up)
-					else if (event.jbutton.button == SDL_JOYSTICK_BUTTON_X)   joy_X_button_state = 1;    // X (Shift)
+#ifndef USE_MENU
+					last_key_scancode = SDL_SCANCODE_Z; // to resume game
+#endif
+					switch (event.jbutton.button)
+					{
+						case PS4_BUTTON_DPAD_LEFT:  joy_hat_states[0] = -1; break; // left
+						case PS4_BUTTON_DPAD_RIGHT: joy_hat_states[0] = 1;  break; // right
+						case PS4_BUTTON_DPAD_UP:    joy_hat_states[1] = -1; break; // up
+						case PS4_BUTTON_DPAD_DOWN:  joy_hat_states[1] = 1;  break; // down
+
+						case PS4_TRIANGLE_BUTTON:   joy_AY_buttons_state = 1;  break; /*** A (down) ***/
+						case PS4_X_BUTTON:          joy_AY_buttons_state = -1; break; /*** Y (up) ***/
+						case PS4_SQUARE_BUTTON:     joy_X_button_state = 1;    break; /*** X (Shift) ***/
+						case PS4_OPTIONS_BUTTON:
+#ifdef USE_MENU
+							last_key_scancode = SDL_SCANCODE_BACKSPACE;  /*** bring up pause menu ***/
+#else
+							last_key_scancode = SDL_SCANCODE_ESCAPE;  /*** back (pause game) ***/
+#endif
+							break;
+
+						default: break;
+					}
 				}
 				else if (event.type == SDL_JOYBUTTONUP) {
-					if      (event.jbutton.button == SDL_JOYSTICK_BUTTON_Y)   joy_AY_buttons_state = 0;  // Y (up)
-					else if (event.jbutton.button == SDL_JOYSTICK_BUTTON_X)   joy_X_button_state = 0;    // X (Shift)
+					switch (event.jbutton.button)
+					{
+						case PS4_BUTTON_DPAD_LEFT:  joy_hat_states[0] = 0; break; // left
+						case PS4_BUTTON_DPAD_RIGHT: joy_hat_states[0] = 0; break; // right
+						case PS4_BUTTON_DPAD_UP:    joy_hat_states[1] = 0; break; // up
+						case PS4_BUTTON_DPAD_DOWN:  joy_hat_states[1] = 0; break; // down
+
+						case PS4_TRIANGLE_BUTTON:   joy_AY_buttons_state = 0; break; /*** A (down) ***/
+						case PS4_X_BUTTON:          joy_AY_buttons_state = 0; break; /*** Y (up) ***/
+						case PS4_SQUARE_BUTTON:     joy_X_button_state = 0;   break; /*** X (Shift) ***/
+						default: break;
+					}
 				}
 				break;
 

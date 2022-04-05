@@ -488,8 +488,15 @@ void set_options_to_default() {
 
 void load_global_options() {
 	set_options_to_default();
+	#ifdef PS4
+	ini_load(locate_file("/app0/SDLPoP.ini"), global_ini_callback); // global configuration
+	#else
 	ini_load(locate_file("SDLPoP.ini"), global_ini_callback); // global configuration
+	#endif
+
+	#if !defined(PS4) && !defined(HOSTDEBUG)
 	load_dos_exe_modifications("."); // read PRINCE.EXE in the current working directory
+	#endif
 }
 
 void check_mod_param() {

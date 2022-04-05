@@ -710,8 +710,13 @@ extern dword curr_tick INIT(= 0);
 #endif // USE_REPLAY
 
 extern byte start_fullscreen INIT(= 0);
+#ifdef PS4
+extern word pop_window_width INIT(= 1280);
+extern word pop_window_height INIT(= 720);
+#else
 extern word pop_window_width INIT(= 640);
 extern word pop_window_height INIT(= 400);
+#endif
 extern byte use_custom_levelset INIT(= 0);
 extern char levelset_name[POP_MAX_PATH];
 extern char mod_data_path[POP_MAX_PATH];

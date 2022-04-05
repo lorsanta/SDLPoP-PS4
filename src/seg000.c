@@ -32,6 +32,17 @@ void fix_sound_priorities(void);
 
 // seg000:0000
 void far pop_main() {
+
+#ifdef PS4DEBUG
+	init_ps4_debug();
+#endif
+
+#ifdef PS4
+	if(!file_exists(PS4DATAPATH)) {
+		mkdir(PS4DATAPATH, 0777);
+	}
+#endif
+
 	if (check_param("--version") || check_param("-v")) {
 		printf ("SDLPoP v%s\n", SDLPOP_VERSION);
 		exit(0);
@@ -58,7 +69,9 @@ void far pop_main() {
 #endif
 
 	load_global_options();
+	#if !defined(PS4) && !defined(HOSTDEBUG)
 	check_mod_param();
+	#endif
 #ifdef USE_MENU
 	load_ingame_settings();
 #endif
@@ -370,7 +383,12 @@ char quick_control[] = "........";
 
 const char* get_quick_path(char* custom_path_buffer, size_t max_len) {
 	if (!use_custom_levelset) {
+		#ifdef PS4
+		snprintf_check(custom_path_buffer, max_len, "%s%s", PS4DATAPATH, quick_file /*QUICKSAVE.SAV*/ );
+		return custom_path_buffer;
+		#else
 		return quick_file;
+		#endif
 	}
 	// if playing a custom levelset, try to use the mod folder
 	snprintf_check(custom_path_buffer, max_len, "%s/%s", mod_data_path, quick_file /*QUICKSAVE.SAV*/ );
@@ -381,6 +399,7 @@ int quick_save(void) {
 	int ok = 0;
 	char custom_quick_path[POP_MAX_PATH];
 	const char* path = get_quick_path(custom_quick_path, sizeof(custom_quick_path));
+	printf("%s\n", path);
 	quick_fp = fopen(path, "wb");
 	if (quick_fp != NULL) {
 		process_save((void*) quick_version, COUNT(quick_version));

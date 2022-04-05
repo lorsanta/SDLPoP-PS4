@@ -88,9 +88,13 @@ pause_menu_item_type pause_menu_items[] = {
 		{.id = PAUSE_MENU_LOAD_GAME,     .text = "QUICKLOAD"},
 #endif
 		{.id = PAUSE_MENU_RESTART_LEVEL, .text = "RESTART LEVEL"},
+#ifndef PS4
 		{.id = PAUSE_MENU_SETTINGS,      .text = "SETTINGS"},
+#endif
 		{.id = PAUSE_MENU_RESTART_GAME,  .text = "RESTART GAME"},
+#ifndef PS4
 		{.id = PAUSE_MENU_QUIT_GAME,     .text = "QUIT GAME"},
+#endif
 };
 
 int hovering_pause_menu_item = PAUSE_MENU_RESUME;
@@ -2238,8 +2242,13 @@ void load_ingame_settings(void) {
 	// We want the SDLPoP.cfg file (in-game menu settings) to override the SDLPoP.ini file,
 	// but ONLY if the .ini file wasn't modified since the last time the .cfg file was saved!
 	struct stat st_ini, st_cfg;
-	const char* cfg_filename = locate_file("SDLPoP.cfg");
-	const char* ini_filename = locate_file("SDLPoP.ini");
+	#ifdef PS4
+	const char* cfg_filename = ADD_PS4DATAPATH("SDLPoP.cfg");
+	const char* ini_filename = "/app0/SDLPoP.ini";
+	#else
+	const char* cfg_filename = "SDLPoP.cfg";
+	const char* ini_filename = "SDLPoP.ini";
+	#endif
 	if (stat( cfg_filename, &st_cfg ) == 0 && stat( ini_filename, &st_ini ) == 0) {
 		if (st_ini.st_mtime > st_cfg.st_mtime ) {
 			// SDLPoP.ini is newer than SDLPoP.cfg, so just go with the .ini configuration
