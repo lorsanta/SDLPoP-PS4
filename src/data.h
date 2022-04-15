@@ -711,8 +711,8 @@ extern dword curr_tick INIT(= 0);
 
 extern byte start_fullscreen INIT(= 0);
 #ifdef PS4
-extern word pop_window_width INIT(= 1280);
-extern word pop_window_height INIT(= 720);
+extern word pop_window_width INIT(= 1820);
+extern word pop_window_height INIT(= 1020);
 #else
 extern word pop_window_width INIT(= 640);
 extern word pop_window_height INIT(= 400);
