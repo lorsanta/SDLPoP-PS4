@@ -1,3 +1,14 @@
+# SDLPoP-PS4
+
+To build the project use [OpenOrbis-PS4-Toolchain](https://github.com/OpenOrbis/OpenOrbis-PS4-Toolchain) and this fork of [create-gp4](https://github.com/lorsanta/create-gp4).
+
+Currently the SDL_image library shipped with OpenOrbis-PS4-Toolchain doesn't support PNG files, so it is necessary to convert the PNG files in `data/` to BMP. One way to do it is to use ImageMagick Convert tool:
+```
+for i in `find data -name '*.png'`; do convert ${i%.png}.png ${i%.png}.bpm; done;
+```
+
+There are some problems playing music from the MIDISND*.DAT files, so it is necessary to download the OGG files (see the instructions below).
+
 # SDLPoP
 
 An open-source port of Prince of Persia, based on the disassembly of the DOS version, extended with new features.
